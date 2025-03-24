@@ -4,9 +4,13 @@
 
 package com.boostphysioclinic;
 
+import com.boostphysioclinic.model.Patient;
+import com.boostphysioclinic.model.Personnel;
+import com.boostphysioclinic.model.Physiotherapist;
+
 /**
  *
- * @author DELL
+ * @author Chukwudalu Ibuodinma
  */
 public class BoostPhysioClinic {
 
