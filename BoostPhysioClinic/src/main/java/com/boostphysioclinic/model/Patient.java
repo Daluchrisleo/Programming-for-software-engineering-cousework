@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Patient extends Personnel {
-    private List<Integer> appointments = new ArrayList<>();
+    private final List<Integer> appointments = new ArrayList<>();
 
     public Patient(int id, String fullName, String address, String tel) {
         super(id, fullName, address, tel);
@@ -13,4 +13,14 @@ public class Patient extends Personnel {
     public List<Integer> getAppointments() {
         return appointments;
     }
+
+    public void addAppointment(int appointmentId) {
+        appointments.add(appointmentId);
+    }
+
+    public void removeAppointment(int appointmentId) {
+        appointments.remove(appointmentId);
+    }
+
+
 }
