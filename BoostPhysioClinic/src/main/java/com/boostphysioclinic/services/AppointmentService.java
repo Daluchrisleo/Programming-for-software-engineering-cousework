@@ -7,6 +7,7 @@ import com.boostphysioclinic.model.TimetableSlot;
 import com.boostphysioclinic.util.IdGenerator;
 import com.boostphysioclinic.util.Result;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,13 +31,8 @@ public class AppointmentService {
             return Result.error(BookingError.TIMETABLE_SLOT_ALREADY_BOOKED);
         }
 
-        boolean hasAppointAtSameTimeSlot = patient.getAppointments().stream()
-                .map(this::getAppointmentById)
-                .filter(Result::isSuccess)
-                .map(Result::getData)
-                .anyMatch(existingAppointment ->
-                        existingAppointment.getSlot().getDateTime().isEqual(slot.getDateTime())
-                );
+        boolean hasAppointAtSameTimeSlot = hasAppointAtSameTimeSlot(patient, slot.getDateTime());
+
 
         if (hasAppointAtSameTimeSlot) {
             return Result.error(BookingError.PATIENT_HAS_EXISTING_APPOINTMENT_FOR_THE_SAME_TIME_SLOT);
@@ -127,6 +123,34 @@ public class AppointmentService {
         return Result.success(Result.NO_VALUE);
     }
 
+    public Result<Integer, RebookAppointmentError> rebookAppointment(int appointmentId) {
+        var result = getAppointmentById(appointmentId);
+        if (result.isError()) {
+            return Result.error(RebookAppointmentError.APPOINTMENT_NOT_FOUND);
+        }
+
+        Appointment appointment = result.getData();
+
+        if (appointment.getBookingStatus() != BookingStatus.Cancelled) {
+            return Result.error(RebookAppointmentError.APPOINTMENT_NOT_CANCELLED);
+        }
+
+        if (appointment.getSlot().isBooked()) {
+            return Result.error(RebookAppointmentError.APPOINTMENT_SLOT_NO_LONGER_AVAILABLE);
+        }
+
+        boolean hasAppointAtSameTimeSlot = hasAppointAtSameTimeSlot(appointment.getPatient(), appointment.getSlot().getDateTime());
+        if (hasAppointAtSameTimeSlot) {
+            return Result.error(RebookAppointmentError.PATIENT_HAS_ANOTHER_APPOINTMENT_AT_SAME_TIME);
+        }
+
+
+        // rebook succeeds
+        appointment.setBookingStatus(BookingStatus.Booked);
+        appointment.getSlot().setBooked(true);
+        return Result.success(appointment.getAppointmentId());
+    }
+
     /**
      * Returns the list of all booked appointments.
      *
@@ -134,6 +158,26 @@ public class AppointmentService {
      */
     public List<Appointment> getAppointments() {
         return appointments;
+    }
+
+    private boolean hasAppointAtSameTimeSlot(Patient patient, LocalDateTime time) {
+        boolean hasAppointAtSameTimeSlot = false;
+
+        for (Integer existingAppointmentId : patient.getAppointments()) {
+            var result = getAppointmentById(existingAppointmentId);
+            if (result.isSuccess()) {
+                var existingAppointment = result.getData();
+
+                if (existingAppointment.getBookingStatus() == BookingStatus.Cancelled) continue; // appointment is cancelled, not need to compare the time
+
+                if (existingAppointment.getSlot().getDateTime().isEqual(time)) {
+                    hasAppointAtSameTimeSlot = true;
+                    break;
+                }
+            }
+        }
+
+        return hasAppointAtSameTimeSlot;
     }
 
     /**
@@ -152,5 +196,12 @@ public class AppointmentService {
     public enum BookingError {
         TIMETABLE_SLOT_ALREADY_BOOKED,
         PATIENT_HAS_EXISTING_APPOINTMENT_FOR_THE_SAME_TIME_SLOT
+    }
+
+    public enum RebookAppointmentError {
+        APPOINTMENT_NOT_FOUND,
+        APPOINTMENT_NOT_CANCELLED,
+        APPOINTMENT_SLOT_NO_LONGER_AVAILABLE,
+        PATIENT_HAS_ANOTHER_APPOINTMENT_AT_SAME_TIME
     }
 }
