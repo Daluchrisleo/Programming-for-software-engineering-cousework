@@ -8,7 +8,7 @@ import java.util.List;
  * and a schedule of available time slots.
  */
 public class Physiotherapist extends Personnel {
-    private String expertise;
+    private final List<String> expertise;
     private final List<TimetableSlot> timetable = new ArrayList<>();
 
     /**
@@ -20,7 +20,7 @@ public class Physiotherapist extends Personnel {
      * @param tel       The contact telephone number of the physiotherapist.
      * @param expertise The area of expertise of the physiotherapist.
      */
-    public Physiotherapist(int id, String fullName, String address, String tel, String expertise) {
+    public Physiotherapist(int id, String fullName, String address, String tel, List<String> expertise) {
         super(id, fullName, address, tel);
         this.expertise = expertise;
     }
@@ -28,9 +28,9 @@ public class Physiotherapist extends Personnel {
     /**
      * Returns the area of expertise of the physiotherapist.
      *
-     * @return A string representing the expertise.
+     * @return A list of string representing the areas of expertise.
      */
-    public String getExpertise() {
+    public List<String> getExpertise() {
         return expertise;
     }
 
