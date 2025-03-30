@@ -26,8 +26,8 @@ class IdGeneratorTest {
     }
 
     @Test
-    void testGeneratePatientIdStartsAt10000() {
-        assertEquals(10000, IdGenerator.generatePatientId());
+    void testGeneratePersonnelIdStartsAt10000() {
+        assertEquals(10000, IdGenerator.generatePersonnelId());
     }
 
     @Test
@@ -37,9 +37,9 @@ class IdGeneratorTest {
 
     @Test
     void testPatientIdsIncrementCorrectly() {
-        assertEquals(10000, IdGenerator.generatePatientId());
-        assertEquals(10001, IdGenerator.generatePatientId());
-        assertEquals(10002, IdGenerator.generatePatientId());
+        assertEquals(10000, IdGenerator.generatePersonnelId());
+        assertEquals(10001, IdGenerator.generatePersonnelId());
+        assertEquals(10002, IdGenerator.generatePersonnelId());
     }
 
     @Test
@@ -51,9 +51,9 @@ class IdGeneratorTest {
 
     @Test
     void testPatientAndAppointmentIdsAreIndependent() {
-        assertEquals(10000, IdGenerator.generatePatientId());
+        assertEquals(10000, IdGenerator.generatePersonnelId());
         assertEquals(10000, IdGenerator.generateAppointmentId());
-        assertEquals(10001, IdGenerator.generatePatientId());
+        assertEquals(10001, IdGenerator.generatePersonnelId());
         assertEquals(10001, IdGenerator.generateAppointmentId());
     }
 
@@ -64,14 +64,14 @@ class IdGeneratorTest {
 
         // Generate 1000 IDs for each type and check uniqueness
         for (int i = 0; i < 1000; i++) {
-            assertTrue(patientIds.add(IdGenerator.generatePatientId()));
+            assertTrue(patientIds.add(IdGenerator.generatePersonnelId()));
             assertTrue(appointmentIds.add(IdGenerator.generateAppointmentId()));
         }
     }
 
     @Test
     void testIdsAreAtLeastFiveDigits() {
-        assertTrue(IdGenerator.generatePatientId() >= 10000);
+        assertTrue(IdGenerator.generatePersonnelId() >= 10000);
         assertTrue(IdGenerator.generateAppointmentId() >= 10000);
     }
 }

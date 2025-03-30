@@ -29,7 +29,7 @@ public class PatientService {
             return Result.error(Error.PATIENT_EXISTS);
         }
 
-        int newId = IdGenerator.generatePatientId();
+        int newId = IdGenerator.generatePersonnelId();
         patients.add(new Patient(newId, fullName, address, telephone));
         return Result.success(newId);
     }

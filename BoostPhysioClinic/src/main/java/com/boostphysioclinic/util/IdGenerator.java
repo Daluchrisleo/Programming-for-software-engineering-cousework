@@ -2,8 +2,6 @@ package com.boostphysioclinic.util;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 /**
  * Generates thread-safe, incrementing 5-digit numeric IDs for patients and appointments.
  * <p>
@@ -13,7 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * </p>
  */
 public class IdGenerator {
-    private static final AtomicInteger patientIdCounter = new AtomicInteger(9999);
+    private static final AtomicInteger personnelIdCounter = new AtomicInteger(9999);
     private static final AtomicInteger appointmentIdCounter = new AtomicInteger(9999);
 
     /**
@@ -21,8 +19,8 @@ public class IdGenerator {
      *
      * @return the next 5-digit patient ID (starting at 10000)
      */
-    public static int generatePatientId() {
-        return patientIdCounter.incrementAndGet();
+    public static int generatePersonnelId() {
+        return personnelIdCounter.incrementAndGet();
     }
 
     /**
