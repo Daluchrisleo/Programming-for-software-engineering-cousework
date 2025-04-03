@@ -42,4 +42,13 @@ public class Physiotherapist extends Personnel {
     public List<TimetableSlot> getTimetable() {
         return timetable;
     }
+
+    @Override
+    public String toString() {
+        return "Physiotherapist{" +
+                "expertise=" + expertise +
+                ", \ntimetable=" + timetable +
+                ", \nsize=" + timetable.size() +
+                '}';
+    }
 }

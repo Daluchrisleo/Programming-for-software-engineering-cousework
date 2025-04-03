@@ -35,4 +35,13 @@ public class TimetableSlot {
     public void setBooked(boolean booked) {
         isBooked = booked;
     }
+
+    @Override
+    public String toString() {
+        return "\nTimetableSlot{" +
+                "treatment=" + treatment +
+                ", dateTime=" + dateTime +
+                ", isBooked=" + isBooked +
+                '}';
+    }
 }

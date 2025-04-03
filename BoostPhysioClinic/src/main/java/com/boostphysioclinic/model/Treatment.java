@@ -9,4 +9,11 @@ public class Treatment {
     }
 
     public String getName() { return name; }
+
+    @Override
+    public String toString() {
+        return "Treatment{" +
+                "name='" + name + '\'' +
+                '}';
+    }
 }
