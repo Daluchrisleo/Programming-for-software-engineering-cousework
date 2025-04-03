@@ -7,7 +7,7 @@ public class Appointment {
     private int appointmentId;
     private BookingStatus bookingStatus;
     private Patient patient;
-    private TimetableSlot slot;
+    private TimetableSlot slot; // 2564396
 
     /**
      * Creates a new appointment for a patient at a given timetable slot.
@@ -21,7 +21,7 @@ public class Appointment {
         this.patient = patient;
         this.slot = slot;
         this.bookingStatus = BookingStatus.Booked;
-        slot.setBooked(true);
+        this.slot.setBooked(true);
     }
 
     /**
