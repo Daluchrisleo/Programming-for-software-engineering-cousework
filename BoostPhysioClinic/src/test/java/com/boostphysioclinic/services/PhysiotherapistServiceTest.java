@@ -14,7 +14,7 @@ import java.util.List;
 
 class PhysiotherapistServiceTest {
     private PhysiotherapistService service;
-    private Physiotherapist physio1;
+    private Physiotherapist physio;
 
     @BeforeEach
     void setUp() {
@@ -24,7 +24,7 @@ class PhysiotherapistServiceTest {
         service.addPhysiotherapist("John Doe", "123 Main St", "555-1234", List.of("Sports", "Rehab"));
         service.addPhysiotherapist("Jane Smith", "456 Oak St", "555-5678", List.of("Pediatric", "Geriatric"));
 
-        physio1 = service.getAllPhysiotherapists().get(0);
+        physio = service.getAllPhysiotherapists().get(0);
     }
 
     @Test
@@ -49,23 +49,23 @@ class PhysiotherapistServiceTest {
 
     @Test
     void addSlotToPhysiotherapist_shouldAddToTimetable() {
-        TimetableSlot slot = new TimetableSlot(physio1, new Treatment("Massage"), LocalDateTime.now());
+        TimetableSlot slot = new TimetableSlot(physio, new Treatment("Massage"), LocalDateTime.now());
 
-        service.addSlotToPhysiotherapist(physio1, slot);
+        service.addSlotToPhysiotherapist(physio, slot);
 
-        assertTrue(physio1.getTimetable().contains(slot));
-        assertEquals(1, physio1.getTimetable().size());
+        assertTrue(physio.getTimetable().contains(slot));
+        assertEquals(1, physio.getTimetable().size());
     }
 
     @Test
     void addSlotToPhysiotherapist_shouldAllowMultipleSlots() {
-        TimetableSlot slot1 = new TimetableSlot(physio1, new Treatment("A"), LocalDateTime.now());
-        TimetableSlot slot2 = new TimetableSlot(physio1, new Treatment("B"), LocalDateTime.now().plusHours(1));
+        TimetableSlot slot1 = new TimetableSlot(physio, new Treatment("A"), LocalDateTime.now());
+        TimetableSlot slot2 = new TimetableSlot(physio, new Treatment("B"), LocalDateTime.now().plusHours(1));
 
-        service.addSlotToPhysiotherapist(physio1, slot1);
-        service.addSlotToPhysiotherapist(physio1, slot2);
+        service.addSlotToPhysiotherapist(physio, slot1);
+        service.addSlotToPhysiotherapist(physio, slot2);
 
-        assertEquals(2, physio1.getTimetable().size());
+        assertEquals(2, physio.getTimetable().size());
     }
 
     @Test
