@@ -34,6 +34,7 @@ public class HomeScreenController {
         List<String> options = List.of(
                 "Add Patient",
                 "Delete Patient",
+                "Book an Appointment",
                 "Change/Manage a Booking",
                 "Attend a treatment appointment",
                 "Print Treatment report",
@@ -49,10 +50,11 @@ public class HomeScreenController {
         switch (selectedOptionIndex) {
             case 0 -> onAddPatient();
             case 1 -> onDeletePatient();
-            case 2-> onManageBooking();
-            case 3-> onAttendTreatment();
-            case 4-> onPrintTreatmentReport();
-            case 5-> onPrintPhysiotherapistReport();
+            case 2-> onBookAppointment();
+            case 3-> onManageBooking();
+            case 4-> onAttendTreatment();
+            case 5-> onPrintTreatmentReport();
+            case 6-> onPrintPhysiotherapistReport();
             default -> {
                 exitSystem();
             }
@@ -174,7 +176,77 @@ public class HomeScreenController {
         }
     }
 
+    private void onBookAppointment() {
+
+    }
+
     private void onManageBooking() {
+        List<String> options = List.of("Cancel Appointment", "Rebook Appointment", "Main menu");
+
+        int selectedOptionIndex = view.showMenu(options, "Manage Appointment", true);
+
+        if (selectedOptionIndex == 2){
+            showReturnToMainMenuOrExit();
+            return;
+        }
+
+        if (selectedOptionIndex == 0 || selectedOptionIndex == 1){
+            int appointmentID = view.promptInput("Please provide the Appointment id", userInput -> {
+                try {
+                    int id = Integer.parseInt(userInput);
+                    return Result.success(id);
+                } catch (NumberFormatException e) {
+                    return Result.error("Appointment id should be just numbers");
+                }
+            });
+            if (selectedOptionIndex == 0){
+                cancelAppointment(appointmentID);
+            } else {
+                rebookAppointment(appointmentID);
+            }
+
+        } else {
+            exitSystem();
+        }
+
+    }
+
+    private void rebookAppointment(int appointmentID) {
+        var result = appointmentService.rebookAppointment(appointmentID);
+
+        if (result.isSuccess()) {
+            view.showMessage(prettyPrintMessage("✅ Appointment rebooked"), INFO);
+        } else {
+            var error = result.getError();
+            switch (error) {
+                case APPOINTMENT_NOT_FOUND -> view.showMessage("No appointment found with the provided id", ERROR);
+                case APPOINTMENT_NOT_CANCELLED -> view.showMessage("This appointment is not cancelled", ERROR);
+                case APPOINTMENT_SLOT_NO_LONGER_AVAILABLE ->
+                        view.showMessage("This slot for this appointment is no longer available. Please try booking a new appointment", ERROR);
+                case PATIENT_HAS_ANOTHER_APPOINTMENT_AT_SAME_TIME ->
+                        view.showMessage("Patient has another appointment for the same time", ERROR);
+            }
+        }
+
+        showReturnToMainMenuOrExit();
+    }
+
+    private void cancelAppointment(int appointmentID) {
+        var result = appointmentService.cancelAppointment(appointmentID);
+
+        if (result.isSuccess()) {
+            view.showMessage(prettyPrintMessage("Appointment cancelled"), INFO);
+        } else {
+            var error = result.getError();
+            switch (error) {
+                case APPOINTMENT_ALREADY_ATTENDED -> view.showMessage("We cannot cancel an already attended appointment", ERROR);
+                case APPOINTMENT_NOT_FOUND -> view.showMessage("No appointment found with the provided id", ERROR);
+                case CANNOT_CANCEL_ATTENDED_APPOINTMENT -> view.showMessage("This appointment has already been cancelled", ERROR);
+                default -> view.showMessage("An unexpected error occurred", ERROR);
+            }
+        }
+
+        showReturnToMainMenuOrExit();
     }
 
     private void onPrintPhysiotherapistReport() {
@@ -197,6 +269,26 @@ public class HomeScreenController {
                 .toString();
 
         view.showMessage(message + patient.getId(), INFO);
+    }
+
+    public String prettyPrintMessage(String message) {
+        int boxWidth = 49; // Width inside the borders
+        String border = "+-------------------------------------------------+\n";
+
+        // Center the message
+        int paddingSize = (boxWidth - message.length()) / 2;
+        String padding = " ".repeat(Math.max(0, paddingSize));
+        String line = "|"
+                + padding
+                + message
+                + " ".repeat(Math.max(0, boxWidth - paddingSize - message.length()))
+                + "|\n";
+
+        return new StringBuilder()
+                .append(border)
+                .append(line)
+                .append(border)
+                .toString();
     }
 
     private void showReturnToMainMenuOrExit(){
