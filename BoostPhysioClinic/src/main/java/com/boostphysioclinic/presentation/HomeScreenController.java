@@ -1,5 +1,6 @@
 package com.boostphysioclinic.presentation;
 
+import com.boostphysioclinic.model.Patient;
 import com.boostphysioclinic.services.AppointmentService;
 import com.boostphysioclinic.services.PatientService;
 import com.boostphysioclinic.util.Result;
@@ -90,9 +91,8 @@ public class HomeScreenController {
         var result = patientService.addPatient(patientName, patientAddress, telephone);
 
         if (result.isSuccess()) {
-            int id = result.getData();
-            // todo display this nicely with chatgpt
-            view.showMessage("Patient added successfully with ID: " + id, INFO);
+            Patient newPatient = result.getData();
+            prettyPrintPatientConfirmation(newPatient);
             showReturnToMainMenuOrExit();
         } else {
             var error = result.getError();
@@ -122,13 +122,56 @@ public class HomeScreenController {
 
         boolean isDeleted = patientService.deletePatient(patientID);
 
-        view.showMessage(isDeleted ? "Patient deleted successfully" : "Patient not found", isDeleted ? INFO : ERROR);
+        String successMsg = """
+
+                +-----------------------------------+
+                |       -  Patient Deleted  -       |
+                +-----------------------------------+
+                """;
+
+        view.showMessage(isDeleted ? successMsg : "Patient not found", isDeleted ? INFO : ERROR);
 
         showReturnToMainMenuOrExit();
     }
 
     private void onAttendTreatment() {
+        int appointmentID = view.promptInput("Please provide the Appointment id", userInput -> {
+            try {
+                int id = Integer.parseInt(userInput);
+                return Result.success(id);
+            } catch (NumberFormatException e) {
+                return Result.error("Appointment id should be just numbers");
+            }
+        });
 
+        var result = appointmentService.attendAppointment(appointmentID);
+        if (result.isSuccess()) {
+            String msg = """
+
+                +-----------------------------------+
+                |    -  Appointment Attended  -     |
+                +-----------------------------------+
+                """;
+            view.showMessage(msg, INFO);
+        } else {
+            var error = result.getError();
+            switch (error) {
+                case APPOINTMENT_ALREADY_ATTENDED -> {
+                    view.showMessage("Appointment already attended", ERROR);
+                }
+                case APPOINTMENT_CANCELLED -> {
+                    view.showMessage("This appointment has been cancelled. Try rebooking it", ERROR);
+                }
+                case APPOINTMENT_NOT_FOUND -> {
+                    view.showMessage("Appointment not found", ERROR);
+                }
+                case CANNOT_CANCEL_ATTENDED_APPOINTMENT -> {
+                    view.showMessage("The patient has already attended this appointment", ERROR);
+                }
+            }
+
+            showReturnToMainMenuOrExit();
+        }
     }
 
     private void onManageBooking() {
@@ -141,6 +184,20 @@ public class HomeScreenController {
 
     }
 
+    public void prettyPrintPatientConfirmation(Patient patient) {
+        String message = new StringBuilder()
+                .append("\n+-------------------------------------------------+\n")
+                .append("|             ✅ Patient Added Successfully        |\n")
+                .append("+-------------------------------------------------+\n")
+                .append(String.format("| ID: %-44s |\n", patient.getId()))
+                .append(String.format("| Full Name: %-37s |\n", patient.getFullName()))
+                .append(String.format("| Address: %-39s |\n", patient.getAddress()))
+                .append(String.format("| Telephone: %-37s |\n", patient.getTel()))
+                .append("+-------------------------------------------------+\n")
+                .toString();
+
+        view.showMessage(message + patient.getId(), INFO);
+    }
 
     private void showReturnToMainMenuOrExit(){
         int option = view.showMenu(List.of("Return to Main Menu"), "Please select an option", true);
