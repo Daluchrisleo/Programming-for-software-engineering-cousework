@@ -23,7 +23,7 @@ public class PatientService {
      * @param fullName  the full name of the patient
      * @param address   the address of the patient
      * @param telephone the telephone number of the patient (digits only, may start with '+')
-     * @return a {@link Result} containing the new patient ID on success,
+     * @return a {@link Result} containing the new patient on success,
      *         or an {@link Error} enum on failure
      */
     public Result<Patient, Error> addPatient(String fullName, String address, String telephone) {
