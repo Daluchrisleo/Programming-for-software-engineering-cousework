@@ -12,8 +12,6 @@ public class Treatment {
 
     @Override
     public String toString() {
-        return "Treatment{" +
-                "name='" + name + '\'' +
-                '}';
+        return getName();
     }
 }

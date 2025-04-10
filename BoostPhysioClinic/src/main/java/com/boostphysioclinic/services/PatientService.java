@@ -53,7 +53,7 @@ public class PatientService {
      * Deletes a patient by their unique ID.
      *
      * @param id the ID of the patient to delete
-     * @return true if a patient with the given ID was found and deleted, false otherwise
+     * @return true if a patient with the given ID was found and deleted, false if the patient does not exist
      */
     public boolean deletePatient(int id) {
         return patients.removeIf(p -> p.getId() == id);

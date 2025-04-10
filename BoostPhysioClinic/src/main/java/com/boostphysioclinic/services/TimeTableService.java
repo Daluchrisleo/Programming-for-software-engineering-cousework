@@ -163,7 +163,6 @@ public class TimeTableService {
                 Patient patient = patients.get(patientsBooked);
                 Result<Integer, AppointmentService.BookingError> result = appointmentService.bookAppointment(patient, slot);
                 if (result.isSuccess()) {
-                    slot.setBooked(true);
                     patientsBooked++;
                 }
             }
