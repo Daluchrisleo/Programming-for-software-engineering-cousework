@@ -26,7 +26,7 @@ public class PatientService {
      * @return a {@link Result} containing the new patient ID on success,
      *         or an {@link Error} enum on failure
      */
-    public Result<Integer, Error> addPatient(String fullName, String address, String telephone) {
+    public Result<Patient, Error> addPatient(String fullName, String address, String telephone) {
         if (!validator.validateName(fullName)) {
             return Result.error(Error.NAME_TOO_SHORT);
         }
@@ -44,9 +44,9 @@ public class PatientService {
             return Result.error(Error.PATIENT_EXISTS);
         }
 
-        int newId = IdGenerator.generatePersonnelId();
-        patients.add(new Patient(newId, fullName, address, telephone));
-        return Result.success(newId);
+        Patient patient = new Patient(IdGenerator.generatePersonnelId(), fullName, address, telephone);
+        patients.add(patient);
+        return Result.success(patient);
     }
 
     /**

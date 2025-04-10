@@ -26,7 +26,7 @@ class PatientServiceTest {
 
     @Test
     void addPatient_validPatient_incrementsListSize() {
-        Result<Integer, PatientService.Error> result = SUT.addPatient(validName, validAddress, validNumber);
+        var result = SUT.addPatient(validName, validAddress, validNumber);
         assertTrue(result.isSuccess());
         assertEquals(1, SUT.getPatientsList().size());
     }
@@ -42,40 +42,40 @@ class PatientServiceTest {
 
     @Test
     void addPatient_nameTooShort_returnsError() {
-        Result<Integer, PatientService.Error> result = SUT.addPatient("Jo", "123 Main Street", "555-123-4567");
+        var result = SUT.addPatient("Jo", "123 Main Street", "555-123-4567");
         assertTrue(result.isError());
     }
 
     @Test
     void addPatient_nameTooShort_hasCorrectErrorType() {
-        Result<Integer, PatientService.Error> result = SUT.addPatient("Jo", validAddress, validNumber);
+        var result = SUT.addPatient("Jo", validAddress, validNumber);
         assertEquals(PatientService.Error.NAME_TOO_SHORT, result.getError());
     }
 
     @Test
     void addPatient_duplicateName_returnsError() {
         SUT.addPatient("John Doe", validAddress, validNumber);
-        Result<Integer, PatientService.Error> result = SUT.addPatient("John Doe", validAddress, validNumber);
+        var result = SUT.addPatient("John Doe", validAddress, validNumber);
         assertTrue(result.isError());
     }
 
     @Test
     void addPatient_duplicateName_hasCorrectErrorType() {
         SUT.addPatient("John Doe", validAddress, validNumber);
-        Result<Integer, PatientService.Error> result = SUT.addPatient("John Doe", validAddress, validNumber);
+        var result = SUT.addPatient("John Doe", validAddress, validNumber);
         assertEquals(PatientService.Error.PATIENT_EXISTS, result.getError());
     }
 
     @Test
     void addPatient_invalidTelephone_returnsError() {
-        Result<Integer, PatientService.Error> result = SUT.addPatient(validName, validAddress, "invalid");
+        var result = SUT.addPatient(validName, validAddress, "invalid");
         assertTrue(result.isError());
         assertEquals(PatientService.Error.INVALID_TELEPHONE, result.getError());
     }
 
     @Test
     void addPatient_addressLessThan3Characters_returnsError() {
-        Result<Integer, PatientService.Error> result = SUT.addPatient(validName, "123", validNumber);
+        var result = SUT.addPatient(validName, "123", validNumber);
         assertTrue(result.isError());
         assertEquals(PatientService.Error.INVALID_ADDRESS, result.getError());
     }
@@ -97,7 +97,7 @@ class PatientServiceTest {
 
     @Test
     void addPatient_minimumValidName_succeeds() {
-        Result<Integer, PatientService.Error> result = SUT.addPatient("Ann", validAddress, validNumber);
+        var result = SUT.addPatient("Ann", validAddress, validNumber);
         assertTrue(result.isSuccess());
     }
 
@@ -111,7 +111,7 @@ class PatientServiceTest {
 
     @Test
     void addPatient_invalidAddress_returnsCorrectError() {
-        Result<Integer, PatientService.Error> result = SUT.addPatient(validName, "", validNumber);
+        var result = SUT.addPatient(validName, "", validNumber);
         assertEquals(PatientService.Error.INVALID_ADDRESS, result.getError());
     }
 }
