@@ -15,6 +15,8 @@ import java.util.List;
 public class PatientService {
     private List<Patient> patients = new ArrayList<>();
 
+    private Validator validator = new Validator();
+
     /**
      * Adds a new patient to the system after validating the input fields.
      *
@@ -25,15 +27,15 @@ public class PatientService {
      *         or an {@link Error} enum on failure
      */
     public Result<Integer, Error> addPatient(String fullName, String address, String telephone) {
-        if (fullName.length() < 3){
+        if (!validator.validateName(fullName)) {
             return Result.error(Error.NAME_TOO_SHORT);
         }
 
-        if (address.length() < 4){
+        if (!validator.validateAddress(address)) {
             return Result.error(Error.INVALID_ADDRESS);
         }
 
-        if (telephone.length() < 7 || !telephone.matches("\\+?[0-9]+")) {
+        if (!validator.validateTelephone(telephone)) {
             System.out.println("Invalid telephone format");
             return Result.error(Error.INVALID_TELEPHONE);
         }
@@ -79,6 +81,10 @@ public class PatientService {
         return patients;
     }
 
+    public Validator getValidator() {
+        return validator;
+    }
+
     /**
      * Enumeration of possible error states for patient operations.
      */
@@ -88,6 +94,20 @@ public class PatientService {
         INVALID_ADDRESS,
         PATIENT_EXISTS,
         PATIENT_NOT_FOUND,
+    }
+
+    public static class Validator{
+        public boolean validateName(String fullName) {
+            return fullName.length() >= 3;
+        }
+
+        public boolean validateAddress(String address) {
+            return address.length() >= 4;
+        }
+
+        public boolean validateTelephone(String telephone) {
+            return telephone.length() >= 7 && telephone.matches("\\+?[0-9]+");
+        }
     }
 }
 
