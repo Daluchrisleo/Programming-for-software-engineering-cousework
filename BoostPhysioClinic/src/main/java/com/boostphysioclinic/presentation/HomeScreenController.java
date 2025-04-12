@@ -1,19 +1,26 @@
 package com.boostphysioclinic.presentation;
 
+import com.boostphysioclinic.model.Appointment;
 import com.boostphysioclinic.model.Patient;
+import com.boostphysioclinic.model.Physiotherapist;
+import com.boostphysioclinic.model.TimetableSlot;
 import com.boostphysioclinic.services.AppointmentService;
 import com.boostphysioclinic.services.PatientService;
+import com.boostphysioclinic.services.PhysiotherapistService;
 import com.boostphysioclinic.util.Result;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
-import static com.boostphysioclinic.presentation.ConsoleView.MessageType.ERROR;
-import static com.boostphysioclinic.presentation.ConsoleView.MessageType.INFO;
+import static com.boostphysioclinic.presentation.ConsoleView.MessageType.*;
 
 public class HomeScreenController {
     private final ConsoleView view = new BasicConsoleView();
     private PatientService patientService = new PatientService();
     private AppointmentService appointmentService = new AppointmentService();
+    private PhysiotherapistService physiotherapistService = new PhysiotherapistService();
 
 
     public HomeScreenController() {
@@ -177,7 +184,191 @@ public class HomeScreenController {
     }
 
     private void onBookAppointment() {
+        int patientID = view.promptInput("Please provide the patient id", userInput -> {
+            try {
+                int id = Integer.parseInt(userInput);
+                return Result.success(id);
+            } catch (NumberFormatException e) {
+                return Result.error("Patient id should be just numbers");
+            }
+        });
 
+        Patient patient = patientService.getPatientById(patientID);
+
+        if (patient == null){
+            view.showMessage("No patient found with this ID", ERROR);
+
+            int option = view.showMenu(
+                    List.of("Try a different ID", "Return to Main Menu"),
+                    "Pick an option", true);
+
+            if (option == 0){
+                onBookAppointment();
+            } else if (option == 1){
+                showMainMenuOptions();
+            } else {
+                exitSystem();
+            }
+            return;
+        }
+
+
+
+        int option = view.showMenu(
+                List.of("Search by Physiotherapist name", "Search by area of expertise"),
+                "How would you like to search?", true);
+
+        List<Physiotherapist> physiotherapists;
+
+        switch (option) {
+            case 0 -> {
+                String name = view.promptInput("Please enter the name of the physiotherapist", userInput -> {
+                    if (userInput.isEmpty()) {
+                        return Result.error("Physiotherapist name cannot be empty");
+                    } else {
+                        return Result.success(userInput);
+                    }
+                });
+                physiotherapists = physiotherapistService.getPhysiotherapistsByName(name);
+            }
+            case 1 -> {
+                String expertise = view.promptInput("Please enter the area of expertise", userInput -> {
+                    if (userInput.isEmpty()) {
+                        return Result.error("Area of expertise name cannot be empty");
+                    } else {
+                        return Result.success(userInput);
+                    }
+                });
+                physiotherapists = physiotherapistService.getPhysiotherapistsByExpertise(expertise);
+            }
+
+            default -> {
+                exitSystem();
+                return;
+            }
+        }
+
+        if (physiotherapists == null) {
+            view.showMessage("An unexpected error occurred", ERROR);
+            showReturnToMainMenuOrExit();
+            return;
+        }
+
+        if (physiotherapists.isEmpty()) {
+            view.showMessage("No physiotherapists found", WARNING);
+            showReturnToMainMenuOrExit();
+            return;
+        }
+
+
+
+        Physiotherapist selectedPhysiotherapist = promptUserToSelectPhysiotherapist(physiotherapists);
+
+
+        TimetableSlot selectedTimeSlot = promptUserToSelectTimeSlot(selectedPhysiotherapist.getTimetable());
+
+        Result<Integer, AppointmentService.BookingError> result = appointmentService.bookAppointment(patient, selectedTimeSlot);
+
+        if (result.isSuccess()) {
+            int appointmentID = result.getData();
+            prettyPrintAppointmentDetails(appointmentID, selectedPhysiotherapist);
+        } else {
+            switch (result.getError()) {
+                case TIMETABLE_SLOT_ALREADY_BOOKED -> view.showMessage("This timetable slot is not available to for booking", ERROR);
+                case PATIENT_HAS_EXISTING_APPOINTMENT_FOR_THE_SAME_TIME_SLOT -> view.showMessage("Booking failed. This patient already has a booking for this time slot.", ERROR);
+            }
+        }
+
+        showReturnToMainMenuOrExit();
+    }
+
+    private TimetableSlot promptUserToSelectTimeSlot(List<TimetableSlot> timetable) {
+        List<String> options = new ArrayList<>();
+
+
+        for (TimetableSlot slot : timetable) {
+            StringBuilder builder = new StringBuilder();
+            builder.append("Treatment: ").append(slot.getTreatment().toString())
+                    .append(" | Date: ").append(formatTime(slot.getDateTime()));
+            options.add(builder.toString());
+        }
+        int selectedIndex = view.showMenu(options, "Select a time slot", true);
+
+        if (selectedIndex == -1) {
+            exitSystem();
+            return null;
+        }
+
+        return timetable.get(selectedIndex);
+    }
+
+    private Physiotherapist promptUserToSelectPhysiotherapist(List<Physiotherapist> physiotherapists) {
+        List<String> options = new ArrayList<>();
+
+        for (Physiotherapist p : physiotherapists) {
+            StringBuilder builder = new StringBuilder();
+            builder.append(p.getFullName());
+            builder.append(" (");
+            builder.append(" Expertise: ");
+            builder.append(p.getExpertise());
+            builder.append(" , Tel: ");
+            builder.append(p.getTel());
+            builder.append(" )");
+
+            options.add(builder.toString());
+        }
+
+
+        int selectedIndex = view.showMenu(options, "Choose a physiotherapist", true);
+
+        if (selectedIndex == -1) {
+            exitSystem();
+            return null;
+        }
+
+
+        return physiotherapists.get(selectedIndex);
+    }
+
+
+    private void prettyPrintAppointmentDetails(int appointmentId, Physiotherapist physiotherapist) {
+        var result  = appointmentService.getAppointmentById(appointmentId);
+
+        if (result.isError()){
+            view.showMessage("Appointment booked with id: " + appointmentId, INFO);
+            return;
+        }
+
+        Appointment appointment = result.getData();
+        Patient patient = appointment.getPatient();
+        TimetableSlot slot = appointment.getSlot();
+
+        StringBuilder builder = new StringBuilder();
+        builder.append("+-------------------------------------------------+\n");
+        builder.append("|            Appointment Details                  |\n");
+        builder.append("+-------------------------------------------------+\n");
+        builder.append(String.format("| Appointment ID: %-31d |\n", appointment.getAppointmentId()));
+        builder.append(String.format("| Status: %-39s |\n", appointment.getBookingStatus()));
+        builder.append("+-------------------------------------------------+\n");
+        builder.append(String.format("| Patient Name: %-33s |\n", patient.getFullName()));
+        builder.append(String.format("| Patient ID: %-35d |\n", patient.getId()));
+        builder.append(String.format("| Address: %-38s |\n", patient.getAddress()));
+        builder.append(String.format("| Phone: %-40s |\n", patient.getTel()));
+        builder.append("+-------------------------------------------------+\n");
+        builder.append(String.format("| Physiotherapist: %-30s |\n", physiotherapist.getFullName()));
+        builder.append(String.format("| Treatment: %-36s |\n", slot.getTreatment().toString()));
+        builder.append(String.format("| Date & Time: %-33s |\n", formatTime(slot.getDateTime())));
+        builder.append("+-------------------------------------------------+\n");
+        builder.append("| Please arrive 10 minutes early for your session |\n");
+        builder.append("+-------------------------------------------------+\n");
+
+        view.showMessage(builder.toString(), INFO);
+
+    }
+
+    private String formatTime(LocalDateTime time) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, dd MMMM yyyy - h:mm a");
+        return time.format(formatter);
     }
 
     private void onManageBooking() {
@@ -259,7 +450,7 @@ public class HomeScreenController {
     public void prettyPrintPatientConfirmation(Patient patient) {
         String message = new StringBuilder()
                 .append("\n+-------------------------------------------------+\n")
-                .append("|             ✅ Patient Added Successfully        |\n")
+                .append("|            ✅ Patient Added Successfully        |\n")
                 .append("+-------------------------------------------------+\n")
                 .append(String.format("| ID: %-44s |\n", patient.getId()))
                 .append(String.format("| Full Name: %-37s |\n", patient.getFullName()))
@@ -268,7 +459,7 @@ public class HomeScreenController {
                 .append("+-------------------------------------------------+\n")
                 .toString();
 
-        view.showMessage(message + patient.getId(), INFO);
+        view.showMessage(message, INFO);
     }
 
     public String prettyPrintMessage(String message) {
