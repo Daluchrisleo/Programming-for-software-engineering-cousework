@@ -7,6 +7,7 @@ import com.boostphysioclinic.model.TimetableSlot;
 import com.boostphysioclinic.services.AppointmentService;
 import com.boostphysioclinic.services.PatientService;
 import com.boostphysioclinic.services.PhysiotherapistService;
+import com.boostphysioclinic.services.ServiceLocator;
 import com.boostphysioclinic.util.Result;
 
 import java.time.LocalDateTime;
@@ -18,12 +19,15 @@ import static com.boostphysioclinic.presentation.ConsoleView.MessageType.*;
 
 public class HomeScreenController {
     private final ConsoleView view = new BasicConsoleView();
-    private PatientService patientService = new PatientService();
-    private AppointmentService appointmentService = new AppointmentService();
-    private PhysiotherapistService physiotherapistService = new PhysiotherapistService();
+    private final PatientService patientService;
+    private final AppointmentService appointmentService;
+    private final PhysiotherapistService physiotherapistService;
 
 
     public HomeScreenController() {
+        patientService = ServiceLocator.getPatientService();
+        appointmentService = ServiceLocator.getAppointmentService();
+        physiotherapistService = ServiceLocator.getPhysiotherapistService();
 
         String appHeader = """
 
@@ -157,7 +161,7 @@ public class HomeScreenController {
         if (result.isSuccess()) {
             String msg = """
 
-                +-----------------------------------+
+                \n+-----------------------------------+
                 |    -  Appointment Attended  -     |
                 +-----------------------------------+
                 """;
@@ -178,12 +182,13 @@ public class HomeScreenController {
                     view.showMessage("The patient has already attended this appointment", ERROR);
                 }
             }
-
-            showReturnToMainMenuOrExit();
         }
+
+        showReturnToMainMenuOrExit();
     }
 
     private void onBookAppointment() {
+        System.out.println(physiotherapistService.getAllPhysiotherapists().size());
         int patientID = view.promptInput("Please provide the patient id", userInput -> {
             try {
                 int id = Integer.parseInt(userInput);
@@ -270,11 +275,12 @@ public class HomeScreenController {
         Result<Integer, AppointmentService.BookingError> result = appointmentService.bookAppointment(patient, selectedTimeSlot);
 
         if (result.isSuccess()) {
+            System.out.println("booked appointment");
             int appointmentID = result.getData();
             prettyPrintAppointmentDetails(appointmentID, selectedPhysiotherapist);
         } else {
             switch (result.getError()) {
-                case TIMETABLE_SLOT_ALREADY_BOOKED -> view.showMessage("This timetable slot is not available to for booking", ERROR);
+                case TIMETABLE_SLOT_ALREADY_BOOKED -> view.showMessage("This timetable slot is not available for booking", ERROR);
                 case PATIENT_HAS_EXISTING_APPOINTMENT_FOR_THE_SAME_TIME_SLOT -> view.showMessage("Booking failed. This patient already has a booking for this time slot.", ERROR);
             }
         }
@@ -289,7 +295,8 @@ public class HomeScreenController {
         for (TimetableSlot slot : timetable) {
             StringBuilder builder = new StringBuilder();
             builder.append("Treatment: ").append(slot.getTreatment().toString())
-                    .append(" | Date: ").append(formatTime(slot.getDateTime()));
+                    .append(" | Date: ").append(formatTime(slot.getDateTime()))
+                    .append(" | Availability: ").append(slot.isBooked()  ? "Booked" : "Available");
             options.add(builder.toString());
         }
         int selectedIndex = view.showMenu(options, "Select a time slot", true);
@@ -309,11 +316,11 @@ public class HomeScreenController {
             StringBuilder builder = new StringBuilder();
             builder.append(p.getFullName());
             builder.append(" (");
-            builder.append(" Expertise: ");
+            builder.append("Expertise: ");
             builder.append(p.getExpertise());
             builder.append(" , Tel: ");
             builder.append(p.getTel());
-            builder.append(" )");
+            builder.append(")");
 
             options.add(builder.toString());
         }
@@ -363,7 +370,6 @@ public class HomeScreenController {
         builder.append("+-------------------------------------------------+\n");
 
         view.showMessage(builder.toString(), INFO);
-
     }
 
     private String formatTime(LocalDateTime time) {

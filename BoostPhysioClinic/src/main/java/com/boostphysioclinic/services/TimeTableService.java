@@ -26,9 +26,9 @@ public class TimeTableService {
     private List<TimetableSlot> timetableSlots;
 
     public TimeTableService() {
-        patientService = new PatientService();
-        physiotherapistService = new PhysiotherapistService();
-        appointmentService = new AppointmentService();
+        patientService = ServiceLocator.getPatientService();
+        physiotherapistService = ServiceLocator.getPhysiotherapistService();
+        appointmentService = ServiceLocator.getAppointmentService();
         timetableSlots = new ArrayList<>();
     }
 
