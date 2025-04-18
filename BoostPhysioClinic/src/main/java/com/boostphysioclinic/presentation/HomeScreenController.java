@@ -73,7 +73,7 @@ public class HomeScreenController {
     }
 
     private void onAddPatient() {
-        view.showMessage("Please provider the patient's details", INFO);
+        view.showMessage("Please provide the patient's details", INFO);
 
         String patientName = view.promptInput("Patient's Full Name", userInput -> {
             if (patientService.getValidator().validateName(userInput.trim())) {
@@ -190,7 +190,6 @@ public class HomeScreenController {
     }
 
     private void onBookAppointment() {
-        System.out.println(physiotherapistService.getAllPhysiotherapists().size());
         int patientID = view.promptInput("Please provide the patient id", userInput -> {
             try {
                 int id = Integer.parseInt(userInput);
@@ -275,7 +274,6 @@ public class HomeScreenController {
         Result<Integer, AppointmentService.BookingError> result = appointmentService.bookAppointment(patient, selectedTimeSlot);
 
         if (result.isSuccess()) {
-            System.out.println("booked appointment");
             int appointmentID = result.getData();
             prettyPrintAppointmentDetails(appointmentID, selectedPhysiotherapist);
         } else {
@@ -584,6 +582,7 @@ public class HomeScreenController {
 
     private void exitSystem() {
         view.showMessage("Exiting system...", INFO);
+        view.showMessage("System Exited!", INFO);
         System.exit(0);
     }
 }
