@@ -4,15 +4,12 @@ import com.boostphysioclinic.model.Appointment;
 import com.boostphysioclinic.model.Patient;
 import com.boostphysioclinic.model.Physiotherapist;
 import com.boostphysioclinic.model.TimetableSlot;
-import com.boostphysioclinic.services.AppointmentService;
-import com.boostphysioclinic.services.PatientService;
-import com.boostphysioclinic.services.PhysiotherapistService;
-import com.boostphysioclinic.services.ServiceLocator;
+import com.boostphysioclinic.model.report.AppointmentReport;
+import com.boostphysioclinic.model.report.PhysiotherapistReport;
+import com.boostphysioclinic.services.*;
 import com.boostphysioclinic.util.Result;
 import com.boostphysioclinic.util.TimeFormatter;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,15 +20,17 @@ public class HomeScreenController {
     private final PatientService patientService;
     private final AppointmentService appointmentService;
     private final PhysiotherapistService physiotherapistService;
+    private final ReportGenerator reportGenerator;
 
 
     public HomeScreenController() {
         patientService = ServiceLocator.getPatientService();
         appointmentService = ServiceLocator.getAppointmentService();
         physiotherapistService = ServiceLocator.getPhysiotherapistService();
+        reportGenerator = new ReportGenerator(physiotherapistService, appointmentService);
 
         String appHeader = """
-
+                
                 +-----------------------------------+
                 |    -  Boost Physio Clinic  -      |
                 +-----------------------------------+
@@ -49,24 +48,24 @@ public class HomeScreenController {
                 "Book an Appointment",
                 "Change/Manage a Booking",
                 "Attend a treatment appointment",
-                "Print Treatment report",
-                "Print Physiotherapist report");
+                "Print Appointment report",
+                "Print Physiotherapists report");
 
         int selectedOptionIndex = view.showMenu(options, "Main menu", true);
 
 
-        if (selectedOptionIndex >= 0 && selectedOptionIndex < options.size()){
+        if (selectedOptionIndex >= 0 && selectedOptionIndex < options.size()) {
             view.showMessage("\n----- * " + options.get(selectedOptionIndex) + " * -----\n", INFO);
         }
 
         switch (selectedOptionIndex) {
             case 0 -> onAddPatient();
             case 1 -> onDeletePatient();
-            case 2-> onBookAppointment();
-            case 3-> onManageBooking();
-            case 4-> onAttendTreatment();
-            case 5-> onPrintTreatmentReport();
-            case 6-> onPrintPhysiotherapistReport();
+            case 2 -> onBookAppointment();
+            case 3 -> onManageBooking();
+            case 4 -> onAttendTreatment();
+            case 5 -> onPrintAppointmentReport();
+            case 6 -> onPrintPhysiotherapistReport();
             default -> {
                 exitSystem();
             }
@@ -77,11 +76,11 @@ public class HomeScreenController {
         view.showMessage("Please provider the patient's details", INFO);
 
         String patientName = view.promptInput("Patient's Full Name", userInput -> {
-                if (patientService.getValidator().validateName(userInput)) {
-                    return Result.success(userInput);
-                } else {
-                    return Result.error("Patient's name is too short");
-                }
+            if (patientService.getValidator().validateName(userInput.trim())) {
+                return Result.success(userInput.trim());
+            } else {
+                return Result.error("Patient's name is too short");
+            }
         });
 
 
@@ -94,8 +93,8 @@ public class HomeScreenController {
         });
 
         String telephone = view.promptInput("Telephone", userInput -> {
-            if (patientService.getValidator().validateTelephone(userInput)) {
-                return Result.success(userInput);
+            if (patientService.getValidator().validateTelephone(userInput.trim())) {
+                return Result.success(userInput.trim());
             } else {
                 return Result.error("Please enter a valid phone number. e.g +4476810546");
             }
@@ -113,9 +112,11 @@ public class HomeScreenController {
 
             switch (error) {
                 case NAME_TOO_SHORT -> view.showMessage("Patient name too short", ERROR);
-                case INVALID_TELEPHONE -> view.showMessage("Invalid telephone number. It must be at least 7 digits", ERROR);
+                case INVALID_TELEPHONE ->
+                        view.showMessage("Invalid telephone number. It must be at least 7 digits", ERROR);
                 case INVALID_ADDRESS -> view.showMessage("Invalid address. Address is too short", ERROR);
-                case PATIENT_EXISTS -> view.showMessage("This patient has already been registered in the system", ERROR);
+                case PATIENT_EXISTS ->
+                        view.showMessage("This patient has already been registered in the system", ERROR);
                 default -> view.showMessage("An unexpected error occurred. Please try again", ERROR);
             }
 
@@ -137,7 +138,7 @@ public class HomeScreenController {
         boolean isDeleted = patientService.deletePatient(patientID);
 
         String successMsg = """
-
+                
                 +-----------------------------------+
                 |       -  Patient Deleted  -       |
                 +-----------------------------------+
@@ -161,11 +162,11 @@ public class HomeScreenController {
         var result = appointmentService.attendAppointment(appointmentID);
         if (result.isSuccess()) {
             String msg = """
-
-                \n+-----------------------------------+
-                |    -  Appointment Attended  -     |
-                +-----------------------------------+
-                """;
+                    
+                    \n+-----------------------------------+
+                    |    -  Appointment Attended  -     |
+                    +-----------------------------------+
+                    """;
             view.showMessage(msg, INFO);
         } else {
             var error = result.getError();
@@ -201,23 +202,22 @@ public class HomeScreenController {
 
         Patient patient = patientService.getPatientById(patientID);
 
-        if (patient == null){
+        if (patient == null) {
             view.showMessage("No patient found with this ID", ERROR);
 
             int option = view.showMenu(
                     List.of("Try a different ID", "Return to Main Menu"),
                     "Pick an option", true);
 
-            if (option == 0){
+            if (option == 0) {
                 onBookAppointment();
-            } else if (option == 1){
+            } else if (option == 1) {
                 showMainMenuOptions();
             } else {
                 exitSystem();
             }
             return;
         }
-
 
 
         int option = view.showMenu(
@@ -267,7 +267,6 @@ public class HomeScreenController {
         }
 
 
-
         Physiotherapist selectedPhysiotherapist = promptUserToSelectPhysiotherapist(physiotherapists);
 
 
@@ -281,8 +280,10 @@ public class HomeScreenController {
             prettyPrintAppointmentDetails(appointmentID, selectedPhysiotherapist);
         } else {
             switch (result.getError()) {
-                case TIMETABLE_SLOT_ALREADY_BOOKED -> view.showMessage("This timetable slot is not available for booking", ERROR);
-                case PATIENT_HAS_EXISTING_APPOINTMENT_FOR_THE_SAME_TIME_SLOT -> view.showMessage("Booking failed. This patient already has a booking for this time slot.", ERROR);
+                case TIMETABLE_SLOT_ALREADY_BOOKED ->
+                        view.showMessage("This timetable slot is not available for booking", ERROR);
+                case PATIENT_HAS_EXISTING_APPOINTMENT_FOR_THE_SAME_TIME_SLOT ->
+                        view.showMessage("Booking failed. This patient already has a booking for this time slot.", ERROR);
             }
         }
 
@@ -297,7 +298,7 @@ public class HomeScreenController {
             StringBuilder builder = new StringBuilder();
             builder.append("Treatment: ").append(slot.getTreatment().toString())
                     .append(" | Date: ").append(TimeFormatter.formatTime(slot.getDateTime()))
-                    .append(" | Availability: ").append(slot.isBooked()  ? "Booked" : "Available");
+                    .append(" | Availability: ").append(slot.isBooked() ? "Booked" : "Available");
             options.add(builder.toString());
         }
         int selectedIndex = view.showMenu(options, "Select a time slot", true);
@@ -340,9 +341,9 @@ public class HomeScreenController {
 
 
     private void prettyPrintAppointmentDetails(int appointmentId, Physiotherapist physiotherapist) {
-        var result  = appointmentService.getAppointmentById(appointmentId);
+        var result = appointmentService.getAppointmentById(appointmentId);
 
-        if (result.isError()){
+        if (result.isError()) {
             view.showMessage("Appointment booked with id: " + appointmentId, INFO);
             return;
         }
@@ -378,12 +379,12 @@ public class HomeScreenController {
 
         int selectedOptionIndex = view.showMenu(options, "Manage Appointment", true);
 
-        if (selectedOptionIndex == 2){
+        if (selectedOptionIndex == 2) {
             showReturnToMainMenuOrExit();
             return;
         }
 
-        if (selectedOptionIndex == 0 || selectedOptionIndex == 1){
+        if (selectedOptionIndex == 0 || selectedOptionIndex == 1) {
             int appointmentID = view.promptInput("Please provide the Appointment id", userInput -> {
                 try {
                     int id = Integer.parseInt(userInput);
@@ -392,7 +393,7 @@ public class HomeScreenController {
                     return Result.error("Appointment id should be just numbers");
                 }
             });
-            if (selectedOptionIndex == 0){
+            if (selectedOptionIndex == 0) {
                 cancelAppointment(appointmentID);
             } else {
                 rebookAppointment(appointmentID);
@@ -432,9 +433,11 @@ public class HomeScreenController {
         } else {
             var error = result.getError();
             switch (error) {
-                case APPOINTMENT_ALREADY_ATTENDED -> view.showMessage("We cannot cancel an already attended appointment", ERROR);
+                case APPOINTMENT_ALREADY_ATTENDED ->
+                        view.showMessage("We cannot cancel an already attended appointment", ERROR);
                 case APPOINTMENT_NOT_FOUND -> view.showMessage("No appointment found with the provided id", ERROR);
-                case CANNOT_CANCEL_ATTENDED_APPOINTMENT -> view.showMessage("This appointment has already been cancelled", ERROR);
+                case CANNOT_CANCEL_ATTENDED_APPOINTMENT ->
+                        view.showMessage("This appointment has already been cancelled", ERROR);
                 default -> view.showMessage("An unexpected error occurred", ERROR);
             }
         }
@@ -443,11 +446,97 @@ public class HomeScreenController {
     }
 
     private void onPrintPhysiotherapistReport() {
+        List<PhysiotherapistReport> report = reportGenerator.generatePhysiotherapistReport();
+
+        // Sort in descending order of attended appointments
+        report.sort((a, b) -> Integer.compare(b.getAttendedAppointments(), a.getAttendedAppointments()));
+
+        if (report.isEmpty()) {
+            view.showMessage("No physiotherapist activity to report.", INFO);
+            showReturnToMainMenuOrExit();
+            return;
+        }
+
+        StringBuilder builder = new StringBuilder();
+        builder.append("+-------------------------------------------+\n");
+        builder.append("| Physiotherapist Name     | Appointments   |\n");
+        builder.append("+-------------------------------------------+\n");
+
+        for (PhysiotherapistReport r : report) {
+            builder.append(String.format("| %-24s | %-13d |\n", r.getPhysiotherapistName(), r.getAttendedAppointments()));
+        }
+
+        builder.append("+-------------------------------------------+\n");
+
+        view.showMessage(builder.toString(), INFO);
+
+        showReturnToMainMenuOrExit();
     }
 
-    private void onPrintTreatmentReport() {
 
+    private void onPrintAppointmentReport() {
+        int index = view.showMenu(List.of("Display report for all appointments", "By Physiotherapist"), "How would you like to view the report?", true);
+
+        if (index == 0) {
+            List<AppointmentReport> reports = reportGenerator.generateAllAppointmentReport();
+            displayAppointmentReport(reports);
+            showReturnToMainMenuOrExit();
+        } else if (index == 1) {
+            String name = view.promptInput("Please enter the name of the physiotherapist", userInput -> {
+                if (userInput.isEmpty()) {
+                    return Result.error("Physiotherapist name cannot be empty");
+                } else {
+                    return Result.success(userInput);
+                }
+            });
+            List<Physiotherapist> physiotherapistsByName = physiotherapistService.getPhysiotherapistsByName(name);
+
+            if (physiotherapistsByName.isEmpty()) {
+                view.showMessage("No physiotherapists found", WARNING);
+                showReturnToMainMenuOrExit();
+                return;
+            }
+
+            Physiotherapist selectedPhysiotherapist = promptUserToSelectPhysiotherapist(physiotherapistsByName);
+
+            List<AppointmentReport> reports = reportGenerator.generateAppointmentReportForPhysiotherapist(selectedPhysiotherapist);
+            displayAppointmentReport(reports);
+            showReturnToMainMenuOrExit();
+        } else {
+            exitSystem();
+        }
     }
+
+    private void displayAppointmentReport(List<AppointmentReport> reports) {
+        if (reports.isEmpty()) {
+            view.showMessage("No appointments to display.", INFO);
+            return;
+        }
+
+        StringBuilder builder = new StringBuilder();
+        builder.append("+--------------------------------------------------------------------------------------+\n");
+        builder.append("| Physio Name      | Treatment         | Patient Name      | Time            | Status   |\n");
+        builder.append("+--------------------------------------------------------------------------------------+\n");
+
+        for (AppointmentReport report : reports) {
+            builder.append(String.format("| %-16s", truncate(report.getPhysiotherapistName(), 16)))
+                    .append(String.format("| %-18s", truncate(report.getTreatmentName(), 18)))
+                    .append(String.format("| %-18s", truncate(report.getPatientName(), 18)))
+                    .append(String.format("| %-16s", truncate(report.getTime(), 16)))
+                    .append(String.format("| %-9s", truncate(report.getAppointmentStatus(), 9)))
+                    .append("|\n");
+        }
+
+        builder.append("+--------------------------------------------------------------------------------------+\n");
+
+        view.showMessage(builder.toString(), INFO);
+    }
+
+    // Helper to truncate long values and avoid breaking formatting
+    private String truncate(String value, int maxLength) {
+        return value.length() > maxLength ? value.substring(0, maxLength - 3) + "..." : value;
+    }
+
 
     public void prettyPrintPatientConfirmation(Patient patient) {
         String message = new StringBuilder()
@@ -484,16 +573,16 @@ public class HomeScreenController {
                 .toString();
     }
 
-    private void showReturnToMainMenuOrExit(){
+    private void showReturnToMainMenuOrExit() {
         int option = view.showMenu(List.of("Return to Main Menu"), "Please select an option", true);
-        if (option == 0){
+        if (option == 0) {
             showMainMenuOptions();
         } else {
             exitSystem();
         }
     }
 
-    private void exitSystem(){
+    private void exitSystem() {
         view.showMessage("Exiting system...", INFO);
         System.exit(0);
     }
