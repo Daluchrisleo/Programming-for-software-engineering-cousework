@@ -12,7 +12,7 @@ public class BasicConsoleView implements ConsoleView {
     @Override
     public void showMessage(String message, MessageType messageType) {
         switch (messageType) {
-            case INFO -> System.out.println("[INFO]: " + message);
+            case INFO -> System.out.println(message);
             case WARNING -> System.out.println("[WARNING]: " + message);
             case ERROR -> System.out.println("[ERROR]: " + message);
         }
@@ -24,7 +24,6 @@ public class BasicConsoleView implements ConsoleView {
             String input = prompt(message);
             var result = validator.apply(input);
             if (result.isSuccess()) {
-                System.out.println("success");
                 return result.getData();
             }
 
@@ -38,7 +37,7 @@ public class BasicConsoleView implements ConsoleView {
     }
 
     private String prompt(String prompt) {
-        System.out.println(prompt + ": ");
+        System.out.println("\n" + prompt + ": ");
         return sc.nextLine();
     }
 
@@ -49,13 +48,18 @@ public class BasicConsoleView implements ConsoleView {
         if (title != null && !title.isEmpty()) showMessage(title);
 
         for (int i = 0; i < menuItems.size(); i++) {
-            System.out.printf("[%d] %s%n", i + 1, menuItems.get(i));
+            System.out.printf("%d. %s%n", i + 1, menuItems.get(i));
         }
 
-        return promptInput("Select option (1-" + menuItems.size() + ")", input -> {
+        if (includeExit) {
+            System.out.println("0. Exit");
+        }
+
+        return promptInput("Select option (" + (includeExit ? 0 : 1) + "-" + menuItems.size() + ")", input -> {
             try {
-                int index = Integer.parseInt(input);
-                if (index >= 1 && index <= menuItems.size()) {
+                int index = Integer.parseInt(input.trim());
+
+                if (index >= (includeExit ? 0 : 1)  && index <= menuItems.size()) {
                     return Result.success(index - 1);
                 } else {
                     return Result.error("Invalid selection. Please pick a number from the list.");
