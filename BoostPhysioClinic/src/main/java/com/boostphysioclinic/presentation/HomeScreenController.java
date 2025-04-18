@@ -9,6 +9,7 @@ import com.boostphysioclinic.services.PatientService;
 import com.boostphysioclinic.services.PhysiotherapistService;
 import com.boostphysioclinic.services.ServiceLocator;
 import com.boostphysioclinic.util.Result;
+import com.boostphysioclinic.util.TimeFormatter;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -295,7 +296,7 @@ public class HomeScreenController {
         for (TimetableSlot slot : timetable) {
             StringBuilder builder = new StringBuilder();
             builder.append("Treatment: ").append(slot.getTreatment().toString())
-                    .append(" | Date: ").append(formatTime(slot.getDateTime()))
+                    .append(" | Date: ").append(TimeFormatter.formatTime(slot.getDateTime()))
                     .append(" | Availability: ").append(slot.isBooked()  ? "Booked" : "Available");
             options.add(builder.toString());
         }
@@ -364,17 +365,12 @@ public class HomeScreenController {
         builder.append("+-------------------------------------------------+\n");
         builder.append(String.format("| Physiotherapist: %-30s |\n", physiotherapist.getFullName()));
         builder.append(String.format("| Treatment: %-36s |\n", slot.getTreatment().toString()));
-        builder.append(String.format("| Date & Time: %-33s |\n", formatTime(slot.getDateTime())));
+        builder.append(String.format("| Date & Time: %-33s |\n", TimeFormatter.formatTime(slot.getDateTime())));
         builder.append("+-------------------------------------------------+\n");
         builder.append("| Please arrive 10 minutes early for your session |\n");
         builder.append("+-------------------------------------------------+\n");
 
         view.showMessage(builder.toString(), INFO);
-    }
-
-    private String formatTime(LocalDateTime time) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE, dd MMMM yyyy - h:mm a");
-        return time.format(formatter);
     }
 
     private void onManageBooking() {
