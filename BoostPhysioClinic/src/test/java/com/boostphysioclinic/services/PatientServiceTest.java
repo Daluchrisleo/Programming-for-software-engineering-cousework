@@ -11,7 +11,7 @@ class PatientServiceTest {
 
     private PatientService SUT;
     private final String validName = "John Doe";
-    private final String validNumber = "+1234567";
+    private final String validNumber = "+123452353467";
     private final String validAddress = "123 Main Street";
 
     @BeforeEach

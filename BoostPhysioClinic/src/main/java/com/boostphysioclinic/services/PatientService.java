@@ -106,7 +106,7 @@ public class PatientService {
         }
 
         public boolean validateTelephone(String telephone) {
-            return telephone.length() >= 7 && telephone.matches("\\+?[0-9]+");
+            return telephone.length() >= 7 && telephone.matches("^[\\+]?[(]?[0-9]{3}[)]?[-\\s\\.]?[0-9]{3}[-\\s\\.]?[0-9]{4,6}$");
         }
     }
 }
