@@ -152,7 +152,7 @@ public class HomeScreenController {
     private void onAttendTreatment() {
         int appointmentID = view.promptInput("Please provide the Appointment id", userInput -> {
             try {
-                int id = Integer.parseInt(userInput);
+                int id = Integer.parseInt(userInput.trim());
                 return Result.success(id);
             } catch (NumberFormatException e) {
                 return Result.error("Appointment id should be just numbers");
@@ -192,7 +192,7 @@ public class HomeScreenController {
     private void onBookAppointment() {
         int patientID = view.promptInput("Please provide the patient id", userInput -> {
             try {
-                int id = Integer.parseInt(userInput);
+                int id = Integer.parseInt(userInput.trim());
                 return Result.success(id);
             } catch (NumberFormatException e) {
                 return Result.error("Patient id should be just numbers");
