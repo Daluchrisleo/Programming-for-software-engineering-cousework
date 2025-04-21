@@ -12,19 +12,32 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Service responsible for managing the timetable of physiotherapists and generating sample data.
+ * Includes logic to assign treatments and create slots for physiotherapy sessions.
+ */
 public class TimeTableService {
     private static final LocalDate TIMETABLE_START_DATE = LocalDate.of(2025, 1, 6); // Jan 6, 2025 (Monday)
+
+    /**
+     * Weekly schedule pattern defining the working days for each week.
+     * 0 = Monday, 1 = Tuesday, ..., 6 = Sunday
+     */
     private static final List<List<Integer>> WEEKLY_DAYS = List.of(
             List.of(0, 2), // Week 0: Monday and Wednesday
             List.of(1, 3), // Week 1: Tuesday and Thursday
             List.of(0, 4), // Week 2: Monday and Friday
             List.of(2, 4)  // Week 3: Wednesday and Friday
     );
+
     private PatientService patientService;
     private PhysiotherapistService physiotherapistService;
     private AppointmentService appointmentService;
     private List<TimetableSlot> timetableSlots;
 
+    /**
+     * Constructs a new {@code TimeTableService} and retrieves service instances.
+     */
     public TimeTableService() {
         patientService = ServiceLocator.getPatientService();
         physiotherapistService = ServiceLocator.getPhysiotherapistService();
@@ -32,15 +45,18 @@ public class TimeTableService {
         timetableSlots = new ArrayList<>();
     }
 
-
-
+    /**
+     * Generates a set of sample physiotherapists, patients, and timetabled slots for demonstration.
+     */
     public void generateSampleData() {
         generatePhysiotherapists();
         generatePatients();
         generateAndAssignPhysiotherapistTimetable();
     }
 
-
+    /**
+     * Populates the system with a list of predefined physiotherapists and their areas of expertise.
+     */
     private void generatePhysiotherapists() {
         physiotherapistService.addPhysiotherapist("Alice Smith", "123 Main St, NY", "123-456-7890",
                 List.of("Sports Medicine", "Post-Op Recovery", "Manual Physiotherapy"));
@@ -54,9 +70,13 @@ public class TimeTableService {
                 List.of("Pediatric Development", "Aquatic Therapy"));
         physiotherapistService.addPhysiotherapist("Fiona Black", "753 Cedar Ln, WA", "111-222-3333",
                 List.of("Respiratory Physiotherapy", "Posture Correction", "Work Injury Management"));
+        physiotherapistService.addPhysiotherapist("Fiona Divine", "744 Bradley Ln, WA", "101-212-3444",
+                List.of("Pelvic Floor Physiotherapy", "Pediatric Physiotherapy", "Geriatric Physiotherapy"));
     }
 
-
+    /**
+     * Populates the system with a list of predefined patients.
+     */
     private void generatePatients() {
         patientService.addPatient("John Doe", "10 Baker St, London", "+441234567890");
         patientService.addPatient("Jane Smith", "22 Oxford Rd, Manchester", "+441612345678");
@@ -74,7 +94,12 @@ public class TimeTableService {
         patientService.addPatient("Charlotte Hall", "112 Fir St, Newcastle", "+441912233445");
     }
 
-    // Helper method to get treatments for expertises
+    /**
+     * Maps physiotherapist expertise to relevant treatments.
+     *
+     * @param expertise the expertise category
+     * @return a list of treatments associated with the expertise
+     */
     private List<String> getTreatmentsForExpertise(String expertise) {
         return switch (expertise) {
             case "Sports Medicine" -> List.of("Sports Injury Assessment", "Athletic Recovery Session", "Health check");
@@ -91,10 +116,16 @@ public class TimeTableService {
             case "Respiratory Physiotherapy" -> List.of("Breathing Exercise Session", "Chest Physiotherapy");
             case "Posture Correction" -> List.of("Ergonomic Assessment", "Postural Alignment Session");
             case "Work Injury Management" -> List.of("Ergonomic Workspace Evaluation", "Injury Prevention Session", "Massage");
+            case "Pelvic Floor Physiotherapy" -> List.of("Bladder Retraining Techniques", "Postpartum Rehabilitation", "Pelvic Floor Muscle Training (PFMT)");
+            case "Pediatric Physiotherapy" -> List.of("Developmental Delay Therapy", "Gait Training", "Sensory Integration Therapy");
+            case "Geriatric Physiotherapy" -> List.of("Fall Prevention Programs", "Osteoarthritis & Joint Pain Management", "Functional Mobility Training");
             default -> List.of("General Physiotherapy Session");
         };
     }
 
+    /**
+     * Generates and assigns non-overlapping treatment timetable slots to each physiotherapist based on their expertise.
+     */
     private void generateAndAssignPhysiotherapistTimetable() {
         List<Physiotherapist> physiotherapists = physiotherapistService.getAllPhysiotherapists();
         for (Physiotherapist physio : physiotherapists) {
@@ -102,7 +133,6 @@ public class TimeTableService {
             for (int week = 0; week < 4; week++) {
                 List<Integer> daysThisWeek = WEEKLY_DAYS.get(week);
 
-                // Get treatments for this week's specialty
                 int expertiseIndex = week % expertise.size();
                 String currentExpertise = expertise.get(expertiseIndex);
                 List<String> treatments = getTreatmentsForExpertise(currentExpertise);
@@ -110,17 +140,14 @@ public class TimeTableService {
                 for (int dayOffset : daysThisWeek) {
                     LocalDate weekStart = TIMETABLE_START_DATE.plusWeeks(week);
                     LocalDate date = weekStart.plusDays(dayOffset);
-
-                    // Generate time slots ensuring no overlaps
                     List<LocalTime> timeSlots = createTimeSlots();
-                    int treatmentIndex = 0;
 
+                    int treatmentIndex = 0;
                     while (treatmentIndex < treatments.size() && !timeSlots.isEmpty()) {
                         String treatmentName = treatments.get(treatmentIndex);
                         LocalTime slotTime = timeSlots.remove(0);
                         LocalDateTime dateTime = LocalDateTime.of(date, slotTime);
 
-                        // Check for existing slot at this time
                         boolean timeOccupied = physio.getTimetable().stream()
                                 .anyMatch(slot -> slot.getDateTime().equals(dateTime));
 
@@ -137,13 +164,16 @@ public class TimeTableService {
         }
     }
 
+    /**
+     * Creates a list of time slots (morning and afternoon) used for scheduling treatments.
+     *
+     * @return a list of {@code LocalTime} representing available session times
+     */
     private List<LocalTime> createTimeSlots() {
         List<LocalTime> slots = new ArrayList<>();
-        // Morning slots
         slots.add(LocalTime.of(9, 0));
         slots.add(LocalTime.of(10, 0));
         slots.add(LocalTime.of(11, 0));
-        // Afternoon slots
         slots.add(LocalTime.of(14, 0));
         slots.add(LocalTime.of(15, 0));
         slots.add(LocalTime.of(16, 0));
