@@ -38,7 +38,6 @@ public class TimeTableService {
         generatePhysiotherapists();
         generatePatients();
         generateAndAssignPhysiotherapistTimetable();
-        bookAppointmentsForPatients();
     }
 
 
@@ -149,23 +148,5 @@ public class TimeTableService {
         slots.add(LocalTime.of(15, 0));
         slots.add(LocalTime.of(16, 0));
         return slots;
-    }
-
-
-
-    private void bookAppointmentsForPatients() {
-        List<Patient> patients = patientService.getPatientsList();
-        int patientsBooked = 0;
-
-        for (TimetableSlot slot : timetableSlots) {
-            if (patientsBooked >= patients.size()) break;
-            if (!slot.isBooked()) {
-                Patient patient = patients.get(patientsBooked);
-                Result<Integer, AppointmentService.BookingError> result = appointmentService.bookAppointment(patient, slot);
-                if (result.isSuccess()) {
-                    patientsBooked++;
-                }
-            }
-        }
     }
 }
