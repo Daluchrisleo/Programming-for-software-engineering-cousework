@@ -431,11 +431,11 @@ public class HomeScreenController {
         } else {
             var error = result.getError();
             switch (error) {
-                case APPOINTMENT_ALREADY_ATTENDED ->
-                        view.showMessage("We cannot cancel an already attended appointment", ERROR);
+                case APPOINTMENT_CANCELLED ->
+                        view.showMessage("This appointment has already been cancelled", ERROR);
                 case APPOINTMENT_NOT_FOUND -> view.showMessage("No appointment found with the provided id", ERROR);
                 case CANNOT_CANCEL_ATTENDED_APPOINTMENT ->
-                        view.showMessage("This appointment has already been cancelled", ERROR);
+                        view.showMessage("We cannot cancel an already attended appointment", ERROR);
                 default -> view.showMessage("An unexpected error occurred", ERROR);
             }
         }
