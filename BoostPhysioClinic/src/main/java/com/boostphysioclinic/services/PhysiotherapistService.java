@@ -66,8 +66,10 @@ public class PhysiotherapistService {
         List<Physiotherapist> result = new ArrayList<>();
 
         for (Physiotherapist physiotherapist : physiotherapists) {
-            if (!physiotherapist.getExpertise().isEmpty() && physiotherapist.getExpertise().contains(expertise)) {
-                result.add(physiotherapist);
+            for (String e : physiotherapist.getExpertise()) {
+                if (e.toLowerCase().contains(expertise.toLowerCase())) {
+                    result.add(physiotherapist);
+                }
             }
         }
         return result;
