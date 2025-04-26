@@ -13,7 +13,7 @@ class IdGeneratorTest {
     @BeforeEach
     void resetCounters() throws Exception {
         // Reset patient counter to 9999 using reflection
-        Field patientCounterField = IdGenerator.class.getDeclaredField("patientIdCounter");
+        Field patientCounterField = IdGenerator.class.getDeclaredField("personnelIdCounter");
         patientCounterField.setAccessible(true);
         AtomicInteger patientCounter = (AtomicInteger) patientCounterField.get(null);
         patientCounter.set(9999);
